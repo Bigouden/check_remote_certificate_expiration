@@ -2,10 +2,18 @@
 
 ```
 >>> python3.8 check_remote_certificate_expiration.py -h
-usage: check_remote_certificate_expiration.py [-h] [--port PORT] [--timeout TIMEOUT] 
-                                              [--warning WARNING] [--critical CRITICAL]
-                                              [--insecure] [--proxy PROXY][--proxy-port PROXY_PORT]
-                                              [--proxy-username PROXY_USERNAME] [--proxy-password PROXY_PASSWORD]
+usage: check_remote_certificate_expiration.py [-h] [--port PORT]
+                                              [--timeout TIMEOUT]
+                                              [--warning WARNING]
+                                              [--critical CRITICAL]
+                                              [--insecure]
+                                              [--proxy PROXY]
+                                              [--proxy-port PROXY_PORT]
+                                              [--proxy-username PROXY_USERNAME]
+                                              [--proxy-password PROXY_PASSWORD]
+                                              [--proxy-user-agent PROXY_USER_AGENT]
+                                              [--smtp]
+                                              [--ehlo-hostname EHLO_HOSTNAME]
                                               host
 
 positional arguments:
@@ -25,4 +33,9 @@ optional arguments:
                         http proxy username (basic auth)
   --proxy-password PROXY_PASSWORD
                         http proxy password (basic auth)
+  --proxy-user-agent PROXY_USER_AGENT
+                        set custom user agent when using proxy (default: http-client)
+  --smtp                smtp mode with starttls (default: false)
+  --ehlo-hostname EHLO_HOSTNAME
+                        set custom ehlo hostname (default: smtp-client)
 ```

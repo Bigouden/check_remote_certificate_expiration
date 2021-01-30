@@ -7,6 +7,7 @@ import argparse
 from base64 import b64encode
 from datetime import datetime, timedelta
 import ssl
+import smtplib
 import socket
 import sys
 import OpenSSL
@@ -33,7 +34,11 @@ PARSER.add_argument("--proxy", help="http proxy server (ip or hostname)")
 PARSER.add_argument("--proxy-port", help="http proxy port (default: 3128)", type=check_positive, default=3128)
 PARSER.add_argument("--proxy-username", help="http proxy username (basic auth)")
 PARSER.add_argument("--proxy-password", help="http proxy password (basic auth)")
+PARSER.add_argument("--proxy-user-agent", help="set custom user agent when using proxy (default: http-client)")
+PARSER.add_argument("--smtp", help="smtp mode with starttls (default: false)", action="store_true")
+PARSER.add_argument("--ehlo-hostname", help="set custom ehlo hostname (default: smtp-client)")
 PARSER.set_defaults(insecure=False)
+PARSER.set_defaults(smtp=False)
 ARGS = PARSER.parse_args()
 
 def proxy_socket(args):
@@ -41,12 +46,14 @@ def proxy_socket(args):
     try:
         sock = socket.socket()
         sock.connect((args.proxy, args.proxy_port))
+        if not args.proxy_user_agent:
+            args.proxy_user_agent = "http-client"
         if args.proxy_username and args.proxy_password:
             basic = "%s:%s" % (args.proxy_username, args.proxy_password)
             basic = b64encode(basic.encode())
-            connect = "CONNECT %s:%s HTTP/1.1\r\nProxy-Authorization: Basic %s\r\n\r\n" % (args.host, args.port, basic.decode())
+            connect = "CONNECT %s:%s HTTP/1.1\r\nUser-Agent: %s\r\nProxy-Authorization: Basic %s\r\n\r\n" % (args.host, args.port, args.proxy_user_agent, basic.decode())
         else:
-            connect = "CONNECT %s:%s HTTP/1.1\r\n\r\n" % (args.host, args.port)
+            connect = "CONNECT %s:%s HTTP/1.1\r\nUser-Agent: %s\r\n\r\n" % (args.host, args.port, args.proxy_user_agent)
         sock.send(connect.encode())
         buf = sock.recv(8192)
         if b'HTTP' not in buf:
@@ -55,7 +62,7 @@ def proxy_socket(args):
             msg = "unable to connect to proxy %s:%s (reason: %s)" % (args.proxy, args.proxy_port, reason)
         elif buf[9:12] != b'200':
             status, exit_code = CRITICAL
-            msg = "unable to connect to proxy %s:%s (reason: HTTP %s)" % (args.proxy, args.proxy_port, buf[9:12].decode())
+            msg = "unable to use proxy %s:%s (reason: HTTP %s)" % (args.proxy, args.proxy_port, buf[9:12].decode())
         else:
             return sock
     except ConnectionRefusedError as exception:
@@ -82,6 +89,13 @@ def get_certificate(args):
             sock = proxy_socket(args)
         else:
             sock = socket.create_connection((args.host, args.port))
+        if args.smtp:
+            if not args.ehlo_hostname:
+                args.ehlo_hostname = "smtp-client"
+            sock.recv(1000)
+            ehlo_starttls = "EHLO %s\nSTARTTLS\n" % args.ehlo_hostname
+            sock.send(ehlo_starttls.encode())
+            buf = sock.recv(1000)
         ssl_sock = context.wrap_socket(sock, server_hostname=args.host)
         der_cert = ssl_sock.getpeercert(True)
         pem_cert = ssl.DER_cert_to_PEM_cert(der_cert)
@@ -109,8 +123,14 @@ def check(args):
         PARSER.error("--critical (%s) must not be equal to --warning (%s)" % (args.critical, args.warning))
     if args.proxy_username and not args.proxy_password:
         PARSER.error("--proxy-username and --proxy-password are mutually dependent")
-    if args.proxy_username and args.proxy_password and not args.proxy:
-        print("WARNING : --proxy-username and --proxy-password are ignored without --proxy argument")
+    if args.proxy_username and not args.proxy:
+        print("WARNING : --proxy-username is ignored without --proxy argument")
+    if args.proxy_password and not args.proxy:
+        print("WARNING : --proxy-password is ignored without --proxy argument")
+    if args.proxy_user_agent and not args.proxy:
+        print("WARNING : --proxy-user-agent is ignored without --proxy argument")
+    if not args.smtp and args.ehlo_hostname:
+        print("WARNING : --ehlo-hostname is ignored without --smtp argument")
 
 def main(args):
     '''main'''
