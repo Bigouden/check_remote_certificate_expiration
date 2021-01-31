@@ -7,12 +7,12 @@ usage: check_remote_certificate_expiration.py [-h] [--port PORT]
                                               [--warning WARNING]
                                               [--critical CRITICAL]
                                               [--insecure]
+                                              [--smtp | --ldap]
                                               [--proxy PROXY]
                                               [--proxy-port PROXY_PORT]
                                               [--proxy-username PROXY_USERNAME]
                                               [--proxy-password PROXY_PASSWORD]
                                               [--proxy-user-agent PROXY_USER_AGENT]
-                                              [--smtp]
                                               [--ehlo-hostname EHLO_HOSTNAME]
                                               host
 
@@ -26,6 +26,10 @@ optional arguments:
   --warning WARNING     warning day(s) until expiration date (default: 60)
   --critical CRITICAL   critical day(s) until expiration date (default: 30)
   --insecure            insecure ssl (default: false)
+  --smtp                smtp mode with starttls (default: false)
+  --ldap                ldap mode with starttls (default: false)
+
+PROXY:
   --proxy PROXY         http proxy server (ip or hostname)
   --proxy-port PROXY_PORT
                         http proxy port (default: 3128)
@@ -35,7 +39,8 @@ optional arguments:
                         http proxy password (basic auth)
   --proxy-user-agent PROXY_USER_AGENT
                         set custom user agent when using proxy (default: http-client)
-  --smtp                smtp mode with starttls (default: false)
+
+SMTP:
   --ehlo-hostname EHLO_HOSTNAME
                         set custom ehlo hostname (default: smtp-client)
 ```
