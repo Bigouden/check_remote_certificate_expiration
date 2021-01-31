@@ -7,7 +7,6 @@ import argparse
 from base64 import b64encode
 from datetime import datetime, timedelta
 import ssl
-import smtplib
 import socket
 import sys
 import OpenSSL
@@ -100,11 +99,11 @@ def get_certificate(args):
             sock.recv(1000)
             smtp_starttls = "EHLO %s\nSTARTTLS\n" % args.ehlo_hostname
             sock.send(smtp_starttls.encode())
-            buf = sock.recv(1000)
+            sock.recv(1000)
         if args.ldap:
             ldap_starttls = b"0\x1d\x02\x01\x01w\x18\x80\x161.3.6.1.4.1.1466.20037"
             sock.send(ldap_starttls)
-            buf = sock.recv(2048)
+            sock.recv(2048)
         ssl_sock = context.wrap_socket(sock, server_hostname=args.host)
         der_cert = ssl_sock.getpeercert(True)
         pem_cert = ssl.DER_cert_to_PEM_cert(der_cert)
